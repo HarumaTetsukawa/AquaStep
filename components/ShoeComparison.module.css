@@ -1,0 +1,108 @@
+.card {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 22px;
+  background: #f8fafc;
+}
+
+.cardHeader h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.cardHeader span {
+  display: block;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.visualGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.visualBox {
+  min-width: 0;
+  padding: 10px;
+  border-radius: 18px;
+  background: white;
+}
+
+.visualBox p {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.visualBox small {
+  display: block;
+  margin-top: 7px;
+  color: #64748b;
+  font-size: 10px;
+}
+
+.topView,
+.sideView {
+  position: relative;
+  height: 120px;
+  overflow: hidden;
+  border-radius: 15px;
+  background: linear-gradient(180deg, #f8fbff, #eaf6ff);
+}
+
+.puddleOval {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(14, 165, 233, 0.25);
+  border: 2px solid rgba(14, 165, 233, 0.5);
+}
+
+.shoeTop {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: 36px;
+  transform: translate(-50%, -50%) rotate(-7deg);
+  border-radius: 60% 45% 40% 55%;
+  background: #1e293b;
+  box-shadow: inset 12px 0 0 rgba(255, 255, 255, 0.12);
+}
+
+.shoeSide {
+  position: absolute;
+  left: 36px;
+  bottom: 24px;
+  width: 80px;
+  border-radius: 18px 26px 8px 8px;
+  background: #334155;
+}
+
+.sole {
+  position: absolute;
+  left: 34px;
+  bottom: 24px;
+  width: 86px;
+  border-radius: 6px;
+  background: #0f172a;
+}
+
+.water {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  background: rgba(14, 165, 233, 0.42);
+  border-top: 2px solid rgba(14, 165, 233, 0.7);
+}
+
+@media (max-width: 380px) {
+  .visualGrid {
+    grid-template-columns: 1fr;
+  }
+}

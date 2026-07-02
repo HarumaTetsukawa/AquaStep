@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["turbopack:///[project]/components/RiskBadges.module.css"],"sourcesContent":[".riskGrid {\n  display: grid;\n  grid-template-columns: repeat(4, 1fr);\n  gap: 8px;\n  margin-top: 12px;\n}\n\n.badge {\n  display: grid;\n  place-items: center;\n  gap: 3px;\n  min-height: 64px;\n  border-radius: 18px;\n  border: 1px solid transparent;\n}\n\n.badge span {\n  font-size: 11px;\n  font-weight: 800;\n}\n\n.badge strong {\n  font-size: 22px;\n  line-height: 1;\n}\n\n.low {\n  background: #ecfdf5;\n  color: #047857;\n  border-color: #bbf7d0;\n}\n\n.medium {\n  background: #fffbeb;\n  color: #b45309;\n  border-color: #fde68a;\n}\n\n.high {\n  background: #fef2f2;\n  color: #b91c1c;\n  border-color: #fecaca;\n}\n"],"names":[],"mappings":"AAAA;;;;;;;AAOA;;;;;;;;;AASA;;;;;AAKA;;;;;AAKA;;;;;;AAMA;;;;;;AAMA"}}]
+}

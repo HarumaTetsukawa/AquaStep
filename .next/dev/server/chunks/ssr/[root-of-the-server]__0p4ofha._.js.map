@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 10, "column": 0}, "map": {"version":3,"sources":["file:///Users/tetsukawahareasa/Desktop/aquastep-frontend/app/page.tsx"],"sourcesContent":["import dynamic from 'next/dynamic';\n\nconst AquaStepApp = dynamic(() => import('@/components/AquaStepApp'), {\n  ssr: false\n});\n\nexport default function Home() {\n  return <AquaStepApp />;\n}\n"],"names":["AquaStepApp","ssr","Home"],"mappings":";;;;;AAAA;;;;AAEA,MAAMA,cAAc,IAAA,0KAAO,EAAC;;;;;;IAC1BC,KAAK;;AAGQ,SAASC;IACtB,qBAAO,8OAACF;;;;;AACV"}}]
+}

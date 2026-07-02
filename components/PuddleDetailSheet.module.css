@@ -1,0 +1,143 @@
+.sheet {
+  position: absolute;
+  z-index: 950;
+  left: 0;
+  right: 0;
+  bottom: 86px;
+  max-height: 56dvh;
+  overflow: auto;
+  padding: 12px 18px 18px;
+  border-radius: 28px 28px 0 0;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -18px 50px rgba(15, 23, 42, 0.16);
+  backdrop-filter: blur(18px);
+}
+
+.dragHandle {
+  width: 42px;
+  height: 5px;
+  margin: 0 auto 12px;
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.label {
+  margin: 0 0 4px;
+  color: #0284c7;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.titleRow h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.04em;
+}
+
+.depthCircle {
+  width: 62px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 3px solid #bae6fd;
+}
+
+.depthCircle strong {
+  font-size: 22px;
+  line-height: 0.8;
+}
+
+.depthCircle span {
+  margin-top: -15px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.metaGrid div {
+  padding: 10px;
+  border-radius: 16px;
+  background: #f1f5f9;
+}
+
+.metaGrid span {
+  display: block;
+  margin-bottom: 3px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.metaGrid strong {
+  font-size: 12px;
+}
+
+.naviBox,
+.noteBox,
+.timeBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.naviBox {
+  margin-bottom: 12px;
+  color: #075985;
+  background: #e0f2fe;
+}
+
+.naviBox p,
+.noteBox p {
+  margin: 3px 0 0;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.noteBox {
+  margin-top: 12px;
+}
+
+.timeBox {
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+@media (min-width: 900px) {
+  .sheet {
+    position: relative;
+    inset: auto;
+    height: 100dvh;
+    max-height: none;
+    padding: 24px 24px 110px;
+    border-radius: 0;
+    box-shadow: -18px 0 50px rgba(15, 23, 42, 0.12);
+  }
+
+  .dragHandle {
+    display: none;
+  }
+}
