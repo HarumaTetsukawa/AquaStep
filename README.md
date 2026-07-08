@@ -24,4 +24,5 @@ npm run dev
 
 ## 次にGAS接続するとき
 
-`components/mockPuddles.ts` を廃止して、`fetch('/api/puddles')` に差し替える想定です。
+`components/mockPuddles.ts` を廃止して、geojsonサーバーとのAPI連携に差し替える想定です。
+
