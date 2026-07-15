@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, MapPin, Navigation, Droplets } from 'lucide-react';
-import type { Puddle } from '@/types/puddle';
-import { mockPuddles } from './mockPuddles';
+import type { Puddle, PuddleFeatureCollection } from '@/types/puddle';
+import { geoJsonToPuddles } from '@/lib/geojson/puddles';
 import PuddleMap from './PuddleMap';
 import PuddleDetailSheet from './PuddleDetailSheet';
 import AddPuddlePanel from './AddPuddlePanel';
@@ -12,8 +12,46 @@ import styles from './AquaStepApp.module.css';
 type Tab = 'spot' | 'navi' | 'add';
 
 export default function AquaStepApp() {
-  const [selectedPuddle, setSelectedPuddle] = useState<Puddle | null>(mockPuddles[0]);
+  const [puddles, setPuddles] = useState<Puddle[]>([]);
+  const [selectedPuddle, setSelectedPuddle] = useState<Puddle | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('spot');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadPuddles() {
+      try {
+        setIsLoading(true);
+
+        const response = await fetch('/api/puddles', {
+          signal: controller.signal
+        });
+
+        if (!response.ok) {
+          throw new Error('水たまりデータを取得できませんでした');
+        }
+
+        const geoJson = (await response.json()) as PuddleFeatureCollection;
+        const nextPuddles = geoJsonToPuddles(geoJson);
+
+        setPuddles(nextPuddles);
+        setSelectedPuddle((current) => current ?? nextPuddles[0] ?? null);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadPuddles();
+
+    return () => controller.abort();
+  }, []);
 
   const statusText = useMemo(() => {
     if (activeTab === 'add') return '水たまりを追加';
@@ -36,7 +74,7 @@ export default function AquaStepApp() {
 
       <section className={styles.mapArea}>
         <PuddleMap
-          puddles={mockPuddles}
+          puddles={puddles}
           selectedPuddle={selectedPuddle}
           onSelectPuddle={(puddle) => {
             setSelectedPuddle(puddle);
@@ -46,7 +84,7 @@ export default function AquaStepApp() {
 
         <div className={styles.floatingStatus}>
           <strong>{statusText}</strong>
-          <span>{mockPuddles.length} spots nearby</span>
+          <span>{isLoading ? 'loading...' : `${puddles.length} spots nearby`}</span>
         </div>
       </section>
 

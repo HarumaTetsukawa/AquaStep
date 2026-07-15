@@ -1,37 +1,133 @@
 import { NextResponse } from 'next/server';
+import { puddleRowsToGeoJson } from '@/lib/geojson/puddles';
+import { supabaseAdmin } from '@/lib/supabase/server';
+import type { PuddleRow } from '@/types/puddle';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? 'https://oazbufyzxoqcbqpuoqvu.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const BUCKET = 'puddle-photos';
+const PUDDLE_PHOTO_BUCKET = 'puddle-photos';
+const SIGNED_PHOTO_URL_TTL_SECONDS = 60 * 60;
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 const ALLOWED_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
-function requiredText(formData: FormData, name: string) {
+function parseNumberParam(value: string | null): number | null {
+  if (value === null) return null;
+
+  const numberValue = Number(value);
+
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function requiredText(formData: FormData, name: string): string {
   const value = formData.get(name);
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function parseNumber(formData: FormData, name: string) {
+function parseNumber(formData: FormData, name: string): number | null {
   const value = Number(requiredText(formData, name));
   return Number.isFinite(value) ? value : null;
 }
 
-function extensionFor(photo: File) {
+function extensionFor(photo: File): string {
   if (photo.type === 'image/png') return 'png';
   if (photo.type === 'image/webp') return 'webp';
   return 'jpg';
 }
 
-export async function POST(request: Request) {
-  if (!SUPABASE_KEY) {
+async function getPuddlePhotoUrl(puddleId: number): Promise<string | null> {
+  const folder = String(puddleId);
+  const { data: files, error: listError } = await supabaseAdmin.storage
+    .from(PUDDLE_PHOTO_BUCKET)
+    .list(folder, {
+      limit: 1,
+      sortBy: {
+        column: 'created_at',
+        order: 'desc'
+      }
+    });
+
+  if (listError) {
+    console.error(`Failed to list puddle photo files for ${puddleId}:`, listError);
+    return null;
+  }
+
+  const file = files?.find((item) => item.id !== null);
+
+  if (!file) {
+    return null;
+  }
+
+  const path = `${folder}/${file.name}`;
+  const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
+    .from(PUDDLE_PHOTO_BUCKET)
+    .createSignedUrl(path, SIGNED_PHOTO_URL_TTL_SECONDS);
+
+  if (signedUrlError) {
+    console.error(`Failed to create signed puddle photo URL for ${path}:`, signedUrlError);
+    return null;
+  }
+
+  return signedUrlData.signedUrl;
+}
+
+async function attachPuddlePhotoUrls(rows: PuddleRow[]): Promise<PuddleRow[]> {
+  return Promise.all(
+    rows.map(async (row) => ({
+      ...row,
+      image_url: row.image_url ?? (await getPuddlePhotoUrl(row.id))
+    }))
+  );
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const minLng = parseNumberParam(searchParams.get('minLng'));
+  const maxLng = parseNumberParam(searchParams.get('maxLng'));
+  const minLat = parseNumberParam(searchParams.get('minLat'));
+  const maxLat = parseNumberParam(searchParams.get('maxLat'));
+
+  let query = supabaseAdmin
+    .from('puddles')
+    .select('*')
+    .eq('status', 'approved')
+    .order('id', { ascending: true });
+
+  if (
+    minLng !== null &&
+    maxLng !== null &&
+    minLat !== null &&
+    maxLat !== null
+  ) {
+    query = query
+      .gte('longitude', minLng)
+      .lte('longitude', maxLng)
+      .gte('latitude', minLat)
+      .lte('latitude', maxLat);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Failed to fetch puddles:', error);
+
     return NextResponse.json(
-      { error: 'Supabaseの認証キーが未設定です。SUPABASE_SERVICE_ROLE_KEYを設定してください。' },
-      { status: 503 }
+      { error: '水たまりデータの取得に失敗しました' },
+      { status: 500 }
     );
   }
 
+  const rows = await attachPuddlePhotoUrls((data ?? []) as PuddleRow[]);
+  const geoJson = puddleRowsToGeoJson(rows);
+
+  return NextResponse.json(geoJson, {
+    headers: {
+      'Cache-Control': 'no-store'
+    }
+  });
+}
+
+export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const latitude = parseNumber(formData, 'latitude');
@@ -45,32 +141,49 @@ export async function POST(request: Request) {
     if (!(photo instanceof File) || photo.size === 0) {
       return NextResponse.json({ error: '写真を選択してください。' }, { status: 400 });
     }
+
     if (!ALLOWED_PHOTO_TYPES.has(photo.type) || photo.size > MAX_PHOTO_BYTES) {
-      return NextResponse.json({ error: '写真は10MB以下のJPEG・PNG・WebPを選択してください。' }, { status: 400 });
+      return NextResponse.json(
+        { error: '写真は10MB以下のJPEG・PNG・WebPを選択してください。' },
+        { status: 400 }
+      );
     }
-    if (latitude === null || latitude < -90 || latitude > 90 || longitude === null || longitude < -180 || longitude > 180) {
+
+    if (
+      latitude === null ||
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude === null ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
       return NextResponse.json({ error: '緯度・経度が正しくありません。' }, { status: 400 });
     }
+
     if (
-      depthCm === null || depthCm <= 0 || depthCm > 500 ||
-      rangeNsM === null || rangeNsM <= 0 || rangeNsM > 100 ||
-      rangeEwM === null || rangeEwM <= 0 || rangeEwM > 100
+      depthCm === null ||
+      depthCm <= 0 ||
+      depthCm > 500 ||
+      rangeNsM === null ||
+      rangeNsM <= 0 ||
+      rangeNsM > 100 ||
+      rangeEwM === null ||
+      rangeEwM <= 0 ||
+      rangeEwM > 100
     ) {
-      return NextResponse.json({ error: '深さまたは大きさが入力範囲外です。' }, { status: 400 });
+      return NextResponse.json(
+        { error: '深さまたは大きさが入力範囲外です。' },
+        { status: 400 }
+      );
     }
+
     if (!/^\d{4}-\d{2}-\d{2}$/.test(observedOn)) {
       return NextResponse.json({ error: '観測日が正しくありません。' }, { status: 400 });
     }
 
-    const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` };
-    const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/puddles`, {
-      method: 'POST',
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-        Prefer: 'return=representation'
-      },
-      body: JSON.stringify({
+    const { data: insertedRows, error: insertError } = await supabaseAdmin
+      .from('puddles')
+      .insert({
         latitude,
         longitude,
         range_ns_m: rangeNsM,
@@ -79,42 +192,52 @@ export async function POST(request: Request) {
         observed_on: observedOn,
         status: 'approved'
       })
-    });
+      .select('id')
+      .single();
 
-    if (!insertResponse.ok) {
-      const detail = await insertResponse.text();
-      console.error('Supabase row insert failed:', detail);
-      return NextResponse.json({ error: '水たまり情報の保存に失敗しました。テーブル設定を確認してください。' }, { status: 502 });
+    if (insertError || !insertedRows?.id) {
+      console.error('Supabase row insert failed:', insertError);
+
+      return NextResponse.json(
+        { error: '水たまり情報の保存に失敗しました。テーブル設定を確認してください。' },
+        { status: 502 }
+      );
     }
 
-    const rows = (await insertResponse.json()) as Array<{ id?: number }>;
-    const puddle = rows[0];
-    if (!puddle?.id) {
-      return NextResponse.json({ error: '登録した水たまりのIDを取得できませんでした。' }, { status: 502 });
-    }
-
-    // テーブル列は増やさず、行IDで写真との対応が分かるパスに保存します。
-    const objectPath = `${puddle.id}/${crypto.randomUUID()}.${extensionFor(photo)}`;
-    const uploadResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${objectPath}`, {
-      method: 'POST',
-      headers: { ...headers, 'Content-Type': photo.type, 'x-upsert': 'false' },
-      body: await photo.arrayBuffer()
-    });
-
-    if (!uploadResponse.ok) {
-      const detail = await uploadResponse.text();
-      console.error('Supabase Storage upload failed:', detail);
-      await fetch(`${SUPABASE_URL}/rest/v1/puddles?id=eq.${puddle.id}`, {
-        method: 'DELETE',
-        headers
+    const puddleId = Number(insertedRows.id);
+    const objectPath = `${puddleId}/${crypto.randomUUID()}.${extensionFor(photo)}`;
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(PUDDLE_PHOTO_BUCKET)
+      .upload(objectPath, photo, {
+        contentType: photo.type,
+        upsert: false
       });
-      return NextResponse.json({ error: '写真のアップロードに失敗しました。Storage設定を確認してください。' }, { status: 502 });
+
+    if (uploadError) {
+      console.error('Supabase Storage upload failed:', uploadError);
+
+      await supabaseAdmin.from('puddles').delete().eq('id', puddleId);
+
+      return NextResponse.json(
+        { error: '写真のアップロードに失敗しました。Storage設定を確認してください。' },
+        { status: 502 }
+      );
     }
 
-    const photoUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${objectPath}`;
-    return NextResponse.json({ puddle, photoUrl, photoPath: objectPath }, { status: 201 });
+    return NextResponse.json(
+      {
+        puddle: { id: puddleId },
+        photoPath: objectPath,
+        photoUrl: await getPuddlePhotoUrl(puddleId)
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Puddle registration failed:', error);
-    return NextResponse.json({ error: '登録処理中に予期しないエラーが発生しました。' }, { status: 500 });
+
+    return NextResponse.json(
+      { error: '登録処理中に予期しないエラーが発生しました。' },
+      { status: 500 }
+    );
   }
 }
