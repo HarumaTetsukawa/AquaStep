@@ -4,7 +4,7 @@
 __turbopack_context__.v((parentImport) => {
     return Promise.all([
   "static/chunks/node_modules_1-qzlgi._.js",
-  "static/chunks/components_1001k44._.js",
+  "static/chunks/_0bzvkk2._.js",
   {
     "path": "static/chunks/components_21awpbu._.css",
     "included": [

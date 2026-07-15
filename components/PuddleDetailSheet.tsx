@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Clock, Navigation } from 'lucide-react';
 import type { Puddle } from '@/types/puddle';
 import ShoeComparison from './ShoeComparison';
@@ -11,7 +12,37 @@ type Props = {
   mode: 'spot' | 'navi';
 };
 
+function getInitialHour(updatedAt: string): number {
+  const time = updatedAt.split(' ')[1];
+  const hour = Number(time?.split(':')[0]);
+
+  return Number.isFinite(hour) ? hour : 12;
+}
+
+function getTimeImageFilter(hour: number): string {
+  const distanceFromNoon = Math.min(Math.abs(hour - 12), 12) / 12;
+  const brightness = 1 - distanceFromNoon * 0.58;
+  const contrast = 1 + distanceFromNoon * 0.28;
+  const saturation = 1 - distanceFromNoon * 0.3;
+
+  return `brightness(${brightness}) contrast(${contrast}) saturate(${saturation})`;
+}
+
+function formatHour(hour: number): string {
+  return `${String(hour).padStart(2, '0')}:00`;
+}
+
 export default function PuddleDetailSheet({ puddle, mode }: Props) {
+  const [previewHour, setPreviewHour] = useState(12);
+
+  useEffect(() => {
+    if (puddle) {
+      setPreviewHour(getInitialHour(puddle.updatedAt));
+    }
+  }, [puddle?.id, puddle?.updatedAt]);
+
+  const imageFilter = useMemo(() => getTimeImageFilter(previewHour), [previewHour]);
+
   if (!puddle) {
     return (
       <aside className={styles.sheet}>
@@ -35,6 +66,42 @@ export default function PuddleDetailSheet({ puddle, mode }: Props) {
           <span>cm</span>
         </div>
       </div>
+
+      {puddle.imageUrl && (
+        <section className={styles.photoPreview}>
+          <div className={styles.photoFrame}>
+            <img
+              src={puddle.imageUrl}
+              alt={`${puddle.name}の投稿画像`}
+              style={{ filter: imageFilter }}
+            />
+            <span className={styles.timeBadge}>{formatHour(previewHour)}</span>
+          </div>
+
+          <div className={styles.timeControl}>
+            <div className={styles.timeControlHeader}>
+              <strong>時間帯プレビュー</strong>
+              <span>{formatHour(previewHour)}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="23"
+              step="1"
+              value={previewHour}
+              aria-label="画像の時間帯"
+              onChange={(event) => setPreviewHour(Number(event.target.value))}
+            />
+            <div className={styles.timeTicks}>
+              <span>0:00</span>
+              <span>6:00</span>
+              <span>12:00</span>
+              <span>18:00</span>
+              <span>23:00</span>
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className={styles.metaGrid}>
         <div>
