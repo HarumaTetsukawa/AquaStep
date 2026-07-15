@@ -26,3 +26,4 @@ npm run dev
 
 `components/mockPuddles.ts` を廃止して、geojsonサーバーとのAPI連携に差し替える想定です。
 
+開発中・supabase連携

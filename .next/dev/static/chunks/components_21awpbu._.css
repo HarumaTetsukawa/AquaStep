@@ -222,6 +222,77 @@
   font-weight: 800;
 }
 
+.PuddleDetailSheet-module__48WOma__photoPreview {
+  gap: 10px;
+  margin: 14px 0;
+  display: grid;
+}
+
+.PuddleDetailSheet-module__48WOma__photoFrame {
+  aspect-ratio: 16 / 9;
+  background: #0f172a;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.PuddleDetailSheet-module__48WOma__photoFrame img {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  transition: filter .18s;
+  display: block;
+}
+
+.PuddleDetailSheet-module__48WOma__timeBadge {
+  color: #fff;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: #0f172aad;
+  border-radius: 999px;
+  padding: 6px 9px;
+  font-size: 12px;
+  font-weight: 800;
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
+
+.PuddleDetailSheet-module__48WOma__timeControl {
+  background: #f1f5f9;
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.PuddleDetailSheet-module__48WOma__timeControlHeader {
+  color: #0f172a;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  display: flex;
+}
+
+.PuddleDetailSheet-module__48WOma__timeControlHeader span {
+  color: #0284c7;
+  font-weight: 900;
+}
+
+.PuddleDetailSheet-module__48WOma__timeControl input {
+  accent-color: #0284c7;
+  width: 100%;
+}
+
+.PuddleDetailSheet-module__48WOma__timeTicks {
+  color: #64748b;
+  justify-content: space-between;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+}
+
 .PuddleDetailSheet-module__48WOma__metaGrid {
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
