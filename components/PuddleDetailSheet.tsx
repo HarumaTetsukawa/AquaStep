@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Clock, Navigation } from 'lucide-react';
+import { AlertTriangle, Clock, Volume2 } from 'lucide-react';
 import type { Puddle } from '@/types/puddle';
 import ShoeComparison from './ShoeComparison';
 import RiskBadges from './RiskBadges';
@@ -32,8 +32,19 @@ function formatHour(hour: number): string {
   return `${String(hour).padStart(2, '0')}:00`;
 }
 
+function getRiskLabel(risk: Puddle['nightRisk']): string {
+  if (risk === 'high') return '高い';
+  if (risk === 'medium') return '普通';
+  return '低い';
+}
+
+function getWarningMessage(puddle: Puddle): string {
+  return `ここに危険度が${getRiskLabel(puddle.nightRisk)}水たまりがあります。深さは${puddle.depthCm}センチ、大きさは${puddle.diameterCm}センチです。足元に注意してください。`;
+}
+
 export default function PuddleDetailSheet({ puddle, mode }: Props) {
   const [previewHour, setPreviewHour] = useState(12);
+  const [voiceStatus, setVoiceStatus] = useState('');
 
   useEffect(() => {
     if (puddle) {
@@ -42,6 +53,40 @@ export default function PuddleDetailSheet({ puddle, mode }: Props) {
   }, [puddle?.id, puddle?.updatedAt]);
 
   const imageFilter = useMemo(() => getTimeImageFilter(previewHour), [previewHour]);
+  const warningMessage = useMemo(() => (puddle ? getWarningMessage(puddle) : ''), [puddle]);
+
+  function speakWarning() {
+    if (!puddle || !warningMessage) return;
+
+    if (!('speechSynthesis' in window)) {
+      setVoiceStatus('このブラウザでは音声案内を利用できません。');
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(warningMessage);
+    utterance.lang = 'ja-JP';
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.onstart = () => setVoiceStatus('音声警告を再生中');
+    utterance.onend = () => setVoiceStatus('音声警告を再生しました');
+    utterance.onerror = () => setVoiceStatus('音声警告を再生できませんでした');
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  useEffect(() => {
+    if (mode === 'navi' && puddle) {
+      speakWarning();
+    }
+
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [mode, puddle?.id]);
 
   if (!puddle) {
     return (
@@ -58,7 +103,7 @@ export default function PuddleDetailSheet({ puddle, mode }: Props) {
 
       <div className={styles.titleRow}>
         <div>
-          <p className={styles.label}>{mode === 'navi' ? 'Route Check' : 'Selected Spot'}</p>
+          <p className={styles.label}>{mode === 'navi' ? 'Voice Warning' : 'Selected Spot'}</p>
           <h2>{puddle.name}</h2>
         </div>
         <div className={styles.depthCircle}>
@@ -120,10 +165,15 @@ export default function PuddleDetailSheet({ puddle, mode }: Props) {
 
       {mode === 'navi' && (
         <div className={styles.naviBox}>
-          <Navigation size={18} />
+          <Volume2 size={18} />
           <div>
-            <strong>この水たまりを避けるルートを表示予定</strong>
-            <p>今はフロントのラフなので、ボタンだけ仮配置しています。</p>
+            <strong>音声警告</strong>
+            <p>{warningMessage}</p>
+            <button type="button" className={styles.voiceButton} onClick={speakWarning}>
+              <Volume2 size={16} />
+              もう一度再生
+            </button>
+            {voiceStatus && <span className={styles.voiceStatus}>{voiceStatus}</span>}
           </div>
         </div>
       )}

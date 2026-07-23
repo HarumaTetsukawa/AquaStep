@@ -2,16 +2,17 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, MapPin, Navigation, Droplets } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import type { Puddle, PuddleFeatureCollection } from '@/types/puddle';
 import { geoJsonToPuddles } from '@/lib/geojson/puddles';
 import PuddleMap from './PuddleMap';
 import PuddleDetailSheet from './PuddleDetailSheet';
-import AddPuddlePanel from './AddPuddlePanel';
 import styles from './AquaStepApp.module.css';
 
-type Tab = 'spot' | 'navi' | 'add';
+type Tab = 'spot' | 'navi';
 
 export default function AquaStepApp() {
+  const router = useRouter();
   const [puddles, setPuddles] = useState<Puddle[]>([]);
   const [selectedPuddle, setSelectedPuddle] = useState<Puddle | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('spot');
@@ -54,8 +55,7 @@ export default function AquaStepApp() {
   }, []);
 
   const statusText = useMemo(() => {
-    if (activeTab === 'add') return '水たまりを追加';
-    if (activeTab === 'navi') return '安全なルートを確認';
+    if (activeTab === 'navi') return '音声警告を確認';
     return '水たまりスポット';
   }, [activeTab]);
 
@@ -88,11 +88,7 @@ export default function AquaStepApp() {
         </div>
       </section>
 
-      {activeTab === 'add' ? (
-        <AddPuddlePanel onClose={() => setActiveTab('spot')} />
-      ) : (
-        <PuddleDetailSheet puddle={selectedPuddle} mode={activeTab} />
-      )}
+      <PuddleDetailSheet puddle={selectedPuddle} mode={activeTab} />
 
       <nav className={styles.bottomNav}>
         <button
@@ -110,8 +106,8 @@ export default function AquaStepApp() {
           <span>NAVI</span>
         </button>
         <button
-          className={activeTab === 'add' ? styles.activeNavButton : styles.navButton}
-          onClick={() => setActiveTab('add')}
+          className={styles.navButton}
+          onClick={() => router.push('/add-puddle')}
         >
           <Plus size={20} />
           <span>ADD</span>
