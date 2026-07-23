@@ -21,6 +21,9 @@ AquaStepは、まちの中にある水たまりの場所や危険度を確認で
 
 [https://aqua-step-nine.vercel.app](https://aqua-step-nine.vercel.app)
 
+また、投稿用urlはこちらです。
+[https://aqua-step-nine.vercel.app/add-puddle](https://aqua-step-nine.vercel.app/add-puddle)
+
 1. アプリを開きます。
 2. 地図上の水たまりマーカーを選びます。
 3. 画面下の詳細表示で、水たまりの写真や危険度を確認します。
